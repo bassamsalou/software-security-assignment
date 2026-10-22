@@ -4,6 +4,8 @@ __pycache__/
 *.py[cod]
 .venv/
 venv/
+*.pyc
+*.db
 
 # Environment variables and secrets
 .env
