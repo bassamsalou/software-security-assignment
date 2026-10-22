@@ -161,6 +161,46 @@ def get_booking(booking_id):
     return jsonify(response.json()), response.status_code
 
 
+@app.patch("/bookings/<int:booking_id>/status")
+def update_booking_status(booking_id):
+    user = get_current_user()
+
+    if user is None:
+        return jsonify({
+            "error": "Authentication required"
+        }), 401
+
+    if user["role"] != "admin":
+        return jsonify({
+            "error": "Administrator access required"
+        }), 403
+
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({
+            "error": "JSON body required"
+        }), 400
+
+    try:
+        response = requests.patch(
+            f"{RESOURCE_SERVICE_URL}/bookings/{booking_id}/status",
+            headers={
+                "X-User": user["username"],
+                "X-Role": user["role"]
+            },
+            json=data,
+            timeout=5
+        )
+
+    except requests.RequestException:
+        return jsonify({
+            "error": "Resource service is unavailable"
+        }), 503
+
+    return jsonify(response.json()), response.status_code
+
+
 if __name__ == "__main__":
     app.run(
         host="127.0.0.1", 

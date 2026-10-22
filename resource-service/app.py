@@ -59,6 +59,76 @@ def get_booking(booking_id):
         "error": "Access denied"
     }), 403
 
+
+@app.patch("/bookings/<int:booking_id>/status")
+def update_booking_status(booking_id):
+    username = request.headers.get("X-User")
+    role = request.headers.get("X-Role")
+
+    if not username or not role:
+        return jsonify({
+            "error": "Authorization information required"
+        }), 401
+
+    # Only administrators may manage bookings.
+    if role != "admin":
+        return jsonify({
+            "error": "Administrator access required"
+        }), 403
+
+    data = request.get_json(silent=True)
+
+    if not data or "status" not in data:
+        return jsonify({
+            "error": "Status is required"
+        }), 400
+
+    new_status = data["status"]
+
+    allowed_statuses = [
+        "pending",
+        "confirmed",
+        "cancelled"
+    ]
+
+    if new_status not in allowed_statuses:
+        return jsonify({
+            "error": "Invalid booking status"
+        }), 400
+
+    connection = get_connection()
+
+    booking = connection.execute(
+        "SELECT * FROM bookings WHERE id = ?",
+        (booking_id,)
+    ).fetchone()
+
+    if booking is None:
+        connection.close()
+
+        return jsonify({
+            "error": "Booking not found"
+        }), 404
+
+    connection.execute(
+        "UPDATE bookings SET status = ? WHERE id = ?",
+        (new_status, booking_id)
+    )
+
+    connection.commit()
+
+    updated_booking = connection.execute(
+        "SELECT * FROM bookings WHERE id = ?",
+        (booking_id,)
+    ).fetchone()
+
+    connection.close()
+
+    return jsonify({
+        "message": "Booking status updated",
+        "booking": dict(updated_booking)
+    })
+
 if __name__ == "__main__":
     app.run(
         host="127.0.0.1", 
