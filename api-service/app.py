@@ -5,6 +5,7 @@ import requests
 app = Flask(__name__)
 
 RESOURCE_SERVICE_URL = "http://127.0.0.1:5001"
+PROCESSING_SERVICE_URL = "http://127.0.0.1:5002"
 
 # Seeded synthetic users
 USERS = {
@@ -199,6 +200,63 @@ def update_booking_status(booking_id):
         }), 503
 
     return jsonify(response.json()), response.status_code
+
+
+@app.post("/bookings/<int:booking_id>/summary")
+def create_booking_summary(booking_id):
+    user = get_current_user()
+
+    if user is None:
+        return jsonify({
+            "error": "Authentication required"
+        }), 401
+
+    try:
+        response = requests.post(
+            f"{PROCESSING_SERVICE_URL}/process-summary",
+            json={
+                "booking_id": booking_id,
+                "username": user["username"],
+                "role": user["role"]
+            },
+            timeout=5
+        )
+
+    except requests.RequestException:
+        return jsonify({
+            "error": "Processing service is unavailable"
+        }), 503
+
+    return jsonify(response.json()), response.status_code
+
+
+
+@app.get("/summaries/<int:summary_id>")
+def get_summary(summary_id):
+    user = get_current_user()
+
+    if user is None:
+        return jsonify({
+            "error": "Authentication required"
+        }), 401
+
+    try:
+        response = requests.get(
+            f"{RESOURCE_SERVICE_URL}/summaries/{summary_id}",
+            headers={
+                "X-User": user["username"],
+                "X-Role": user["role"]
+            },
+            timeout=5
+        )
+
+    except requests.RequestException:
+        return jsonify({
+            "error": "Resource service is unavailable"
+        }), 503
+
+    return jsonify(response.json()), response.status_code
+
 
 
 if __name__ == "__main__":
