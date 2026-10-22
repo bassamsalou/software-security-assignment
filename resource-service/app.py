@@ -25,7 +25,7 @@ def get_bookings():
 
 @app.get("/bookings/<int:booking_id>")
 def get_booking(booking_id):
-    username = request.headers.get("X-User")
+    username = request.headers.get("X-Username")
     role = request.headers.get("X-Role")
 
     if not username or not role:
@@ -62,7 +62,7 @@ def get_booking(booking_id):
 
 @app.patch("/bookings/<int:booking_id>/status")
 def update_booking_status(booking_id):
-    username = request.headers.get("X-User")
+    username = request.headers.get("X-Username")
     role = request.headers.get("X-Role")
 
     if not username or not role:
@@ -132,7 +132,7 @@ def update_booking_status(booking_id):
 
 @app.post("/summaries")
 def store_summary():
-    username = request.headers.get("X-User")
+    username = request.headers.get("X-Username")
     role = request.headers.get("X-Role")
 
     if not username or not role:
@@ -216,7 +216,7 @@ def store_summary():
 
 @app.get("/summaries/<int:summary_id>")
 def get_summary(summary_id):
-    username = request.headers.get("X-User")
+    username = request.headers.get("X-Username")
     role = request.headers.get("X-Role")
 
     if not username or not role:

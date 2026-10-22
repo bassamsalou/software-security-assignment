@@ -38,7 +38,7 @@ def process_summary():
         response = requests.get(
             f"{RESOURCE_SERVICE_URL}/bookings/{booking_id}",
             headers={
-                "X-User": username,
+                "X-Username": username,
                 "X-Role": role
             },
             timeout=5
@@ -60,7 +60,7 @@ def process_summary():
         store_response = requests.post(
             f"{RESOURCE_SERVICE_URL}/summaries",
             headers={
-                "X-User": username,
+                "X-Username": username,
                 "X-Role": role
             },
             json={

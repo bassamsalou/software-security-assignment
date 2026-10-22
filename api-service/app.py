@@ -148,7 +148,7 @@ def get_booking(booking_id):
         response = requests.get(
             f"{RESOURCE_SERVICE_URL}/bookings/{booking_id}",
             headers={
-                "X-User": user["username"],
+                "X-Username": user["username"],
                 "X-Role": user["role"]
             },
             timeout=5
@@ -187,7 +187,7 @@ def update_booking_status(booking_id):
         response = requests.patch(
             f"{RESOURCE_SERVICE_URL}/bookings/{booking_id}/status",
             headers={
-                "X-User": user["username"],
+                "X-Username": user["username"],
                 "X-Role": user["role"]
             },
             json=data,
@@ -244,7 +244,7 @@ def get_summary(summary_id):
         response = requests.get(
             f"{RESOURCE_SERVICE_URL}/summaries/{summary_id}",
             headers={
-                "X-User": user["username"],
+                "X-Username": user["username"],
                 "X-Role": user["role"]
             },
             timeout=5
