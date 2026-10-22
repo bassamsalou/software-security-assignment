@@ -35,10 +35,10 @@ def init_db():
 
     if cursor.fetchone()[0] == 0:
         bookings = [
-            (1, "John", "Copenhagen", "2026-11-10", "confirmed"),
-            (2, "John", "Berlin", "2026-12-05", "confirmed"),
-            (3, "Doe", "Amsterdam", "2026-11-20", "confirmed"),
-            (4, "Doe", "Paris", "2027-01-15", "pending"),
+            (1, "john", "Copenhagen", "2026-11-10", "confirmed"),
+            (2, "john", "Berlin", "2026-12-05", "confirmed"),
+            (3, "doe", "Amsterdam", "2026-11-20", "confirmed"),
+            (4, "doe", "Paris", "2027-01-15", "pending"),
         ]
 
         cursor.executemany('''
