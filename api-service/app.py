@@ -134,6 +134,33 @@ def get_my_bookings():
     return jsonify(visible_bookings)
 
 
+@app.get("/bookings/<int:booking_id>")
+def get_booking(booking_id):
+    user = get_current_user()
+
+    if user is None:
+        return jsonify({
+            "error": "Authentication required"
+        }), 401
+
+    try:
+        response = requests.get(
+            f"{RESOURCE_SERVICE_URL}/bookings/{booking_id}",
+            headers={
+                "X-User": user["username"],
+                "X-Role": user["role"]
+            },
+            timeout=5
+        )
+
+    except requests.RequestException:
+        return jsonify({
+            "error": "Resource service is unavailable"
+        }), 503
+
+    return jsonify(response.json()), response.status_code
+
+
 if __name__ == "__main__":
     app.run(
         host="127.0.0.1", 

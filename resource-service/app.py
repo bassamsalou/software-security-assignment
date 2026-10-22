@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from database import get_connection, init_db
 
 app = Flask(__name__)
@@ -25,10 +25,18 @@ def get_bookings():
 
 @app.get("/bookings/<int:booking_id>")
 def get_booking(booking_id):
+    username = request.headers.get("X-User")
+    role = request.headers.get("X-Role")
+
+    if not username or not role:
+        return jsonify({
+            "error": "Authorization information required"
+        }), 401
+
     connection = get_connection()
 
     booking = connection.execute(
-        "SELECT * FROM bookings WHERE id = ?", 
+        "SELECT * FROM bookings WHERE id = ?",
         (booking_id,)
     ).fetchone()
 
@@ -37,9 +45,19 @@ def get_booking(booking_id):
     if booking is None:
         return jsonify({
             "error": "Booking not found"
-            }), 404
+        }), 404
 
-    return jsonify(dict(booking))
+    # Administrator may access any booking.
+    if role == "admin":
+        return jsonify(dict(booking))
+
+    # Ordinary users may only access their own booking.
+    if role == "user" and booking["owner"] == username:
+        return jsonify(dict(booking))
+
+    return jsonify({
+        "error": "Access denied"
+    }), 403
 
 if __name__ == "__main__":
     app.run(
