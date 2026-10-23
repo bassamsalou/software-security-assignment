@@ -65,19 +65,20 @@ def search_bookings():
 
     connection = get_connection()
 
-    # INTENTIONALLY VULNERABLE FOR CWE-89 INVESTIGATION.
     if role == "admin":
-        query = (
-            f"SELECT * FROM bookings "
-            f"WHERE destination = '{destination}'"
-        )
+        bookings = connection.execute(
+            "SELECT * FROM bookings WHERE destination = ?",
+            (destination,)
+        ).fetchall()
 
     elif role == "user":
-        query = (
-            f"SELECT * FROM bookings "
-            f"WHERE owner = '{username}' "
-            f"AND destination = '{destination}'"
-        )
+        bookings = connection.execute(
+            """
+            SELECT * FROM bookings
+            WHERE owner = ? AND destination = ?
+            """,
+            (username, destination)
+        ).fetchall()
 
     else:
         connection.close()
@@ -85,8 +86,6 @@ def search_bookings():
         return jsonify({
             "error": "Access denied"
         }), 403
-
-    bookings = connection.execute(query).fetchall()
 
     connection.close()
 

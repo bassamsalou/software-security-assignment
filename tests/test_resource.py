@@ -178,7 +178,7 @@ def test_cwe862_bookings_require_authorization():
     assert response.get_json()["error"] == "Authorization information required"
 
 
-def test_vulnerability_cwe89_sql_injection_bypasses_owner_filter():
+def test_cwe89_sql_injection_is_blocked():
     client = resource_app.app.test_client()
 
     response = client.get(
@@ -196,7 +196,27 @@ def test_vulnerability_cwe89_sql_injection_bypasses_owner_filter():
 
     bookings = response.get_json()
 
-    owners = {booking["owner"] for booking in bookings}
+    assert bookings == []
 
-    assert "john" in owners
-    assert "doe" in owners
+
+def test_booking_search_works_with_normal_destination():
+    client = resource_app.app.test_client()
+
+    response = client.get(
+        "/bookings/search",
+        query_string={
+            "destination": "Copenhagen"
+        },
+        headers={
+            "X-Username": "john",
+            "X-Role": "user"
+        }
+    )
+
+    assert response.status_code == 200
+
+    bookings = response.get_json()
+
+    assert len(bookings) == 1
+    assert bookings[0]["owner"] == "john"
+    assert bookings[0]["destination"] == "Copenhagen"
