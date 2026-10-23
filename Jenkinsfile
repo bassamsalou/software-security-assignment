@@ -18,7 +18,7 @@ pipeline {
                 bat '''
                     if exist .jenkins-venv rmdir /s /q .jenkins-venv
                     python -m venv .jenkins-venv
-                    .jenkins-venv\\Scripts\\python.exe -m pip install --upgrade pip
+                    .jenkins-venv\\Scripts\\python.exe -m pip install --upgrade pip setuptools
                     .jenkins-venv\\Scripts\\python.exe -m pip install -r requirements.txt
                     .jenkins-venv\\Scripts\\python.exe -m pip install -e helper-package
                 '''
