@@ -151,7 +151,7 @@ def test_admin_can_manage_booking():
     assert booking["status"] == "confirmed"
 
 
-def test_invalid_booking_status_is_rejected():
+def test_vulnerability_cwe20_invalid_booking_status_is_accepted():
     client = resource_app.app.test_client()
 
     response = client.patch(
@@ -161,12 +161,15 @@ def test_invalid_booking_status_is_rejected():
             "X-Role": "admin"
         },
         json={
-            "status": "not-a-real-status"
+            "status": "totally-invalid-status"
         }
     )
 
-    assert response.status_code == 400
-    assert response.get_json()["error"] == "Invalid booking status"
+    assert response.status_code == 200
+
+    booking = response.get_json()["booking"]
+
+    assert booking["status"] == "totally-invalid-status"
 
 
 def test_cwe862_bookings_require_authorization():

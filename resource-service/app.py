@@ -154,16 +154,16 @@ def update_booking_status(booking_id):
 
     new_status = data["status"]
 
-    allowed_statuses = [
-        "pending",
-        "confirmed",
-        "cancelled"
-    ]
+    # allowed_statuses = [
+    #     "pending",
+    #     "confirmed",
+    #     "cancelled"
+    # ]
 
-    if new_status not in allowed_statuses:
-        return jsonify({
-            "error": "Invalid booking status"
-        }), 400
+    # if new_status not in allowed_statuses:
+    #     return jsonify({
+    #         "error": "Invalid booking status"
+    #     }), 400
 
     connection = get_connection()
 
