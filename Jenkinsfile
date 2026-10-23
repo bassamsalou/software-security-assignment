@@ -49,5 +49,12 @@ pipeline {
                 '''
             }
         }
+        stage('Static Security Analysis') {
+            steps {
+                bat '''
+                    .jenkins-venv\\Scripts\\python.exe -m bandit -r api-service resource-service processing-service helper-package -ll
+                '''
+            }
+        }
     }
 }
