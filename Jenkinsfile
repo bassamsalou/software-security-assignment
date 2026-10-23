@@ -1,22 +1,16 @@
 pipeline {
     agent any
 
+    environment {
+        PATH = "C:\\Users\\Bruger\\AppData\\Local\\Programs\\Python\\Python311;C:\\Users\\Bruger\\AppData\\Local\\Programs\\Python\\Python311\\Scripts;${env.PATH}"
+    }
+
     stages {
-        stage('Diagnose Environment') {
+        stage('Validate Environment') {
             steps {
-                bat '''
-                    echo === PATH ===
-                    echo %PATH%
-
-                    echo === WHERE PYTHON ===
-                    where python || echo python not found
-
-                    echo === WHERE PY ===
-                    where py || echo py launcher not found
-
-                    echo === PROGRAM FILES PYTHON ===
-                    dir "C:\\Program Files\\Python*" /b || echo No system Python installation found
-                '''
+                bat 'where python'
+                bat 'python --version'
+                bat 'python -m pip --version'
             }
         }
     }
