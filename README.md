@@ -33,30 +33,28 @@ The application consists of three separate services:
 
 The summary workflow uses all three application components:
 
-```text
 User
-  |
-  v
+|
+v
 API Service
-  |
-  v
+|
+v
 Processing Service
-  |
-  v
+|
+v
 Resource Service
-  |
-  v
+|
+v
 Processing Service + booking-helper
-  |
-  v
+|
+v
 Resource Service
-  |
-  v
+|
+v
 API Service
-  |
-  v
+|
+v
 User
-```
 
 ## Requirements
 
@@ -70,41 +68,31 @@ Jenkins is required only for running the CI pipeline.
 
 Clone the repository:
 
-```bash
 git clone https://github.com/bassamsalou/software-security-assignment.git
 cd software-security-assignment
-```
 
-Create a virtual environment:
+Create a virtual environment.
 
 ### Windows
 
-```powershell
 py -m venv .venv
 .venv\Scripts\Activate.ps1
-```
 
 Upgrade the packaging tools:
 
-```powershell
 python -m pip install --upgrade pip setuptools
-```
 
 Install the project dependencies:
 
-```powershell
 python -m pip install -r requirements.txt
-```
 
 Install the custom helper package:
 
-```powershell
 python -m pip install -e .\helper-package
-```
 
 ## Seeded Data
 
-The Resource Service automatically initializes its SQLite database with synthetic booking data.
+The application uses synthetic users and booking data for the assignment.
 
 The following synthetic accounts are available:
 
@@ -120,6 +108,14 @@ Example seeded bookings include bookings owned by John and Doe.
 
 No registration process is required.
 
+### Seeding the Database
+
+No separate seed command is required. The Resource Service automatically creates and seeds the SQLite database when it is started:
+
+python .\resource-service\app.py
+
+This initializes the local database with the synthetic booking data used by the assignment.
+
 ## Running the Application
 
 The three services run as separate processes.
@@ -128,85 +124,75 @@ Open three terminals from the repository root.
 
 ### Terminal 1 — Resource Service
 
-```powershell
+Activate the virtual environment if necessary:
+
+.venv\Scripts\Activate.ps1
+
+Then run:
+
 python .\resource-service\app.py
-```
 
 Runs at:
 
-```text
 http://127.0.0.1:5001
-```
 
 ### Terminal 2 — Processing Service
 
 Activate the virtual environment if necessary:
 
-```powershell
 .venv\Scripts\Activate.ps1
-```
 
 Then run:
 
-```powershell
 python .\processing-service\app.py
-```
 
 Runs at:
 
-```text
 http://127.0.0.1:5002
-```
 
 ### Terminal 3 — API Service
 
 Activate the virtual environment if necessary:
 
-```powershell
 .venv\Scripts\Activate.ps1
-```
 
 Then run:
 
-```powershell
 python .\api-service\app.py
-```
 
 Runs at:
 
-```text
 http://127.0.0.1:5000
-```
 
 ## Running Automated Tests
 
 ### API, Resource and Authorization Tests
 
-```powershell
 python -m pytest tests/test_api.py tests/test_resource.py -v
-```
 
 Expected result:
 
-```text
 21 passed
-```
 
 ### Integration Tests
 
 The integration test suite automatically starts and stops all three application services. The services therefore do not need to be started manually before running this command.
 
-```powershell
 python -m pytest tests/test_integration.py -v
-```
 
 Expected result:
 
-```text
 8 passed
-```
 
 The project currently contains 29 automated tests across these test suites.
+
+To run the complete test suite:
+
+python -m pytest tests/test_api.py tests/test_resource.py tests/test_integration.py -v
+
+Expected result:
+
+29 passed
 
 ## Static Security Analysis
 
@@ -214,17 +200,13 @@ Bandit is used for static security analysis.
 
 Run the full analysis:
 
-```powershell
 python -m bandit -r api-service resource-service processing-service helper-package
-```
 
 The current implementation contains three Low severity findings caused by the intentionally hardcoded synthetic passwords used for seeded assignment accounts.
 
 The CI security gate checks Medium and High severity findings with:
 
-```powershell
 python -m bandit -r api-service resource-service processing-service helper-package -ll
-```
 
 A Medium or High severity finding causes the Jenkins security stage to fail.
 
@@ -232,9 +214,7 @@ A Medium or High severity finding causes the Jenkins security stage to fail.
 
 Dependency vulnerabilities are checked using `pip-audit`:
 
-```powershell
 python -m pip_audit
-```
 
 The current dependency audit reports no known vulnerabilities.
 
@@ -299,11 +279,13 @@ The pipeline performs:
 6. API, resource and authorization tests
 7. Three-service integration tests
 8. Bandit static security analysis
-9. pip-audit dependency analysis
+9. `pip-audit` dependency analysis
 10. Test-result recording
 11. Security and test artifact archiving
 
 The current pipeline executes all 29 automated tests.
+
+Jenkins is configured using SCM polling to automatically detect changes pushed to the configured repository branch and start the pipeline.
 
 ### Security Gates
 
@@ -320,38 +302,35 @@ Low severity Bandit findings are recorded but do not block the build.
 
 Jenkins generates and archives the following evidence:
 
-```text
 artifacts/unit-tests.xml
 artifacts/integration-tests.xml
 artifacts/bandit-report.json
 artifacts/pip-audit-report.json
-```
 
 JUnit test results are also recorded by Jenkins.
 
 ## Project Structure
 
-```text
 software-security-assignment/
 |
 |-- api-service/
-|   `-- app.py
+| `-- app.py
 |
 |-- resource-service/
 |   |-- app.py
 |   `-- database.py
 |
 |-- processing-service/
-|   `-- app.py
+| `-- app.py
 |
 |-- helper-package/
 |   |-- booking_helper/
 |   `-- pyproject.toml
 |
 |-- tests/
-|   |-- test_api.py
-|   |-- test_resource.py
-|   `-- test_integration.py
+| |-- test_api.py
+| |-- test_resource.py
+| `-- test_integration.py
 |
 |-- security/
 |-- artifacts/
@@ -361,13 +340,24 @@ software-security-assignment/
 |-- requirements.txt
 |-- README.md
 `-- .gitignore
-```
 
 ## Documentation
 
 Security planning and design documentation is stored in the `documentation` directory.
 
-This includes the initial Security Lifecycle Plan covering requirements, assets, architecture and trust boundaries, access control, threat analysis, secure design principles, implementation/build activities, testing/CI activities, and release/deployment considerations.
+This includes the initial Security Lifecycle Plan covering:
+
+- Requirements and scope
+- Asset register
+- Architecture and trust boundaries
+- Access-control matrix
+- STRIDE threat analysis
+- Secure design principles
+- Implementation and build activities
+- Testing and CI activities
+- Release and deployment considerations
+
+The final assignment report describes the implemented architecture, security decisions, vulnerability investigations, testing, CI/CD pipeline, evidence, and production considerations.
 
 ## Scope
 
@@ -383,4 +373,4 @@ The project deliberately uses:
 
 Production concerns such as public hosting, registration, payment processing, email delivery, high availability, and large-scale deployment are outside the scope of the assignment.
 
-<!-- Jenkins SCM trigger verification -->
+The optional supply-chain attack experiment was not attempted.
