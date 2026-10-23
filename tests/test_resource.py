@@ -169,18 +169,10 @@ def test_invalid_booking_status_is_rejected():
     assert response.get_json()["error"] == "Invalid booking status"
 
 
-def test_vulnerability_cwe862_bookings_exposed_without_authorization():
+def test_cwe862_bookings_require_authorization():
     client = resource_app.app.test_client()
 
     response = client.get("/bookings")
 
-    assert response.status_code == 200
-
-    bookings = response.get_json()
-
-    assert len(bookings) >= 4
-
-    owners = {booking["owner"] for booking in bookings}
-
-    assert "john" in owners
-    assert "doe" in owners
+    assert response.status_code == 401
+    assert response.get_json()["error"] == "Authorization information required"

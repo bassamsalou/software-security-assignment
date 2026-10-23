@@ -13,15 +13,38 @@ def health():
 
 @app.get("/bookings")
 def get_bookings():
+    username = request.headers.get("X-Username")
+    role = request.headers.get("X-Role")
+
+    if not username or not role:
+        return jsonify({
+            "error": "Authorization information required"
+        }), 401
+
     connection = get_connection()
 
-    bookings = connection.execute(
-        "SELECT * FROM bookings"
+    if role == "admin":
+        bookings = connection.execute(
+            "SELECT * FROM bookings"
         ).fetchall()
-    
+
+    elif role == "user":
+        bookings = connection.execute(
+            "SELECT * FROM bookings WHERE owner = ?",
+            (username,)
+        ).fetchall()
+
+    else:
+        connection.close()
+
+        return jsonify({
+            "error": "Access denied"
+        }), 403
+
     connection.close()
 
     return jsonify([dict(booking) for booking in bookings])
+
 
 @app.get("/bookings/<int:booking_id>")
 def get_booking(booking_id):

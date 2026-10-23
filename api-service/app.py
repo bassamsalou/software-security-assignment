@@ -107,32 +107,24 @@ def get_my_bookings():
     if user is None:
         return jsonify({
             "error": "Authentication required"
-            }), 401
+        }), 401
 
     try:
         response = requests.get(
             f"{RESOURCE_SERVICE_URL}/bookings",
+            headers={
+                "X-Username": user["username"],
+                "X-Role": user["role"]
+            },
             timeout=5
-            )
-        response.raise_for_status()
+        )
 
     except requests.RequestException:
         return jsonify({
             "error": "Resource service is unavailable"
-            }), 503
+        }), 503
 
-    bookings = response.json()
-
-    if user["role"] == "admin":
-        visible_bookings = bookings
-    else:
-        visible_bookings = [
-            booking 
-            for booking in bookings 
-            if booking["owner"] == user["username"]
-        ]
-
-    return jsonify(visible_bookings)
+    return jsonify(response.json()), response.status_code
 
 
 @app.get("/bookings/<int:booking_id>")
