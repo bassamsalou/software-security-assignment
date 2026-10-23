@@ -225,24 +225,45 @@ def store_summary():
             "error": "booking_id, owner and summary are required"
         }), 400
 
-    # VULNERABILITY:
-    # The Resource Service trusts the authorization context supplied
-    # by the Processing Service instead of re-checking the current
-    # ownership of the booking.
-    #
-    # If ownership changes after Processing originally accessed the
-    # booking, this stale authorization decision may still be accepted.
-    if role == "user" and owner != username:
-        return jsonify({
-            "error": "Access denied"
-        }), 403
-
-    if role not in ["user", "admin"]:
-        return jsonify({
-            "error": "Access denied"
-        }), 403
-
     connection = get_connection()
+
+    # Re-read the protected resource at the point of use.
+    # This prevents Processing from relying on stale authorization state.
+    booking = connection.execute(
+        "SELECT * FROM bookings WHERE id = ?",
+        (booking_id,)
+    ).fetchone()
+
+    if booking is None:
+        connection.close()
+
+        return jsonify({
+            "error": "Booking not found"
+        }), 404
+
+    # The supplied owner must still match the booking's current owner.
+    if owner != booking["owner"]:
+        connection.close()
+
+        return jsonify({
+            "error": "Summary owner does not match booking owner"
+        }), 400
+
+    # Revalidate the user's current authority over the booking.
+    if role == "user" and booking["owner"] != username:
+        connection.close()
+
+        return jsonify({
+            "error": "Access denied"
+        }), 403
+
+    # Fail-safe default for unknown roles.
+    if role not in ["user", "admin"]:
+        connection.close()
+
+        return jsonify({
+            "error": "Access denied"
+        }), 403
 
     cursor = connection.execute(
         """

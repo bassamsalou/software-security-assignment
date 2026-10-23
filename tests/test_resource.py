@@ -222,12 +222,12 @@ def test_booking_search_works_with_normal_destination():
     assert bookings[0]["destination"] == "Copenhagen"
 
 
-def test_vulnerability_stale_authorization_allows_summary_after_ownership_change():
+def test_stale_authorization_is_rejected_after_ownership_change():
     client = resource_app.app.test_client()
 
     connection = resource_app.get_connection()
 
-    # Ensure booking 1 starts as John's booking.
+    # Ensure booking 1 initially belongs to John.
     connection.execute(
         "UPDATE bookings SET owner = ? WHERE id = ?",
         ("john", 1)
@@ -236,8 +236,7 @@ def test_vulnerability_stale_authorization_allows_summary_after_ownership_change
     connection.close()
 
     try:
-        # Step 1:
-        # John is legitimately authorized to access booking 1.
+        # John is legitimately authorized at the beginning.
         response = client.get(
             "/bookings/1",
             headers={
@@ -250,9 +249,7 @@ def test_vulnerability_stale_authorization_allows_summary_after_ownership_change
 
         stale_booking = response.get_json()
 
-        # Step 2:
-        # Simulate an authorization-relevant state change occurring
-        # between the two service operations.
+        # Authorization-relevant state changes after the first check.
         connection = resource_app.get_connection()
 
         connection.execute(
@@ -263,9 +260,7 @@ def test_vulnerability_stale_authorization_allows_summary_after_ownership_change
         connection.commit()
         connection.close()
 
-        # Step 3:
-        # Processing still uses the earlier authorization information
-        # saying that John owns booking 1.
+        # Processing attempts to use John's stale authorization context.
         response = client.post(
             "/summaries",
             headers={
@@ -279,12 +274,15 @@ def test_vulnerability_stale_authorization_allows_summary_after_ownership_change
             }
         )
 
-        # Vulnerable behavior:
-        # Resource accepts the stale authorization decision.
-        assert response.status_code == 201
+        # Secure behavior:
+        # Resource re-checks current ownership and rejects the request.
+        assert response.status_code == 400
+        assert response.get_json()["error"] == (
+            "Summary owner does not match booking owner"
+        )
 
     finally:
-        # Restore the seeded database state so other tests are unaffected.
+        # Restore seeded database state.
         connection = resource_app.get_connection()
 
         connection.execute(
