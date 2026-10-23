@@ -220,3 +220,77 @@ def test_booking_search_works_with_normal_destination():
     assert len(bookings) == 1
     assert bookings[0]["owner"] == "john"
     assert bookings[0]["destination"] == "Copenhagen"
+
+
+def test_vulnerability_stale_authorization_allows_summary_after_ownership_change():
+    client = resource_app.app.test_client()
+
+    connection = resource_app.get_connection()
+
+    # Ensure booking 1 starts as John's booking.
+    connection.execute(
+        "UPDATE bookings SET owner = ? WHERE id = ?",
+        ("john", 1)
+    )
+    connection.commit()
+    connection.close()
+
+    try:
+        # Step 1:
+        # John is legitimately authorized to access booking 1.
+        response = client.get(
+            "/bookings/1",
+            headers={
+                "X-Username": "john",
+                "X-Role": "user"
+            }
+        )
+
+        assert response.status_code == 200
+
+        stale_booking = response.get_json()
+
+        # Step 2:
+        # Simulate an authorization-relevant state change occurring
+        # between the two service operations.
+        connection = resource_app.get_connection()
+
+        connection.execute(
+            "UPDATE bookings SET owner = ? WHERE id = ?",
+            ("doe", 1)
+        )
+
+        connection.commit()
+        connection.close()
+
+        # Step 3:
+        # Processing still uses the earlier authorization information
+        # saying that John owns booking 1.
+        response = client.post(
+            "/summaries",
+            headers={
+                "X-Username": "john",
+                "X-Role": "user"
+            },
+            json={
+                "booking_id": 1,
+                "owner": stale_booking["owner"],
+                "summary": "Summary generated using stale authorization"
+            }
+        )
+
+        # Vulnerable behavior:
+        # Resource accepts the stale authorization decision.
+        assert response.status_code == 201
+
+    finally:
+        # Restore the seeded database state so other tests are unaffected.
+        connection = resource_app.get_connection()
+
+        connection.execute(
+            "UPDATE bookings SET owner = ? WHERE id = ?",
+            ("john", 1)
+        )
+
+        connection.commit()
+        connection.close()

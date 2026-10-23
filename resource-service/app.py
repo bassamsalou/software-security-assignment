@@ -225,43 +225,24 @@ def store_summary():
             "error": "booking_id, owner and summary are required"
         }), 400
 
-    connection = get_connection()
-
-    booking = connection.execute(
-        "SELECT * FROM bookings WHERE id = ?",
-        (booking_id,)
-    ).fetchone()
-
-    if booking is None:
-        connection.close()
-
-        return jsonify({
-            "error": "Booking not found"
-        }), 404
-
-    # Verify that the summary owner matches the booking owner.
-    if owner != booking["owner"]:
-        connection.close()
-
-        return jsonify({
-            "error": "Summary owner does not match booking owner"
-        }), 400
-
-    # Ordinary users may only create summaries for their own bookings.
-    if role == "user" and booking["owner"] != username:
-        connection.close()
-
+    # VULNERABILITY:
+    # The Resource Service trusts the authorization context supplied
+    # by the Processing Service instead of re-checking the current
+    # ownership of the booking.
+    #
+    # If ownership changes after Processing originally accessed the
+    # booking, this stale authorization decision may still be accepted.
+    if role == "user" and owner != username:
         return jsonify({
             "error": "Access denied"
         }), 403
 
-    # Unknown roles are denied by default.
     if role not in ["user", "admin"]:
-        connection.close()
-
         return jsonify({
             "error": "Access denied"
         }), 403
+
+    connection = get_connection()
 
     cursor = connection.execute(
         """
@@ -281,6 +262,7 @@ def store_summary():
         "message": "Summary stored",
         "summary_id": summary_id
     }), 201
+
 
 
 @app.get("/summaries/<int:summary_id>")
