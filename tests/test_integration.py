@@ -1,6 +1,72 @@
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+import pytest
 import requests
 
+
+ROOT = Path(__file__).resolve().parents[1]
 API_URL = "http://127.0.0.1:5000"
+
+
+def wait_for_service(url, timeout=10):
+    deadline = time.time() + timeout
+
+    while time.time() < deadline:
+        try:
+            response = requests.get(url, timeout=1)
+            if response.status_code == 200:
+                return
+        except requests.RequestException:
+            pass
+
+        time.sleep(0.5)
+
+    raise RuntimeError(f"Service did not start: {url}")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def start_services():
+    processes = []
+
+    try:
+        resource_process = subprocess.Popen(
+            [sys.executable, str(ROOT / "resource-service" / "app.py")],
+            cwd=str(ROOT)
+        )
+        processes.append(resource_process)
+
+        wait_for_service("http://127.0.0.1:5001/health")
+
+        processing_process = subprocess.Popen(
+            [sys.executable, str(ROOT / "processing-service" / "app.py")],
+            cwd=str(ROOT)
+        )
+        processes.append(processing_process)
+
+        wait_for_service("http://127.0.0.1:5002/health")
+
+        api_process = subprocess.Popen(
+            [sys.executable, str(ROOT / "api-service" / "app.py")],
+            cwd=str(ROOT)
+        )
+        processes.append(api_process)
+
+        wait_for_service("http://127.0.0.1:5000/health")
+
+        yield
+
+    finally:
+        for process in reversed(processes):
+            process.terminate()
+
+        for process in reversed(processes):
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
 
 
 def login(username, password):
