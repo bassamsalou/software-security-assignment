@@ -42,5 +42,12 @@ pipeline {
                 '''
             }
         }
+        stage('Integration Tests') {
+            steps {
+                bat '''
+                    .jenkins-venv\\Scripts\\python.exe -m pytest tests/test_integration.py -v
+                '''
+            }
+        }
     }
 }
