@@ -35,6 +35,7 @@ pipeline {
                 '''
             }
         }
+
         stage('Unit and Authorization Tests') {
             steps {
                 bat '''
@@ -50,19 +51,37 @@ pipeline {
                 '''
             }
         }
+
         stage('Static Security Analysis') {
             steps {
+                script {
+                    bat(
+                        returnStatus: true,
+                        script: '.jenkins-venv\\Scripts\\python.exe -m bandit -r api-service resource-service processing-service helper-package -f json -o artifacts\\bandit-report.json'
+                    )
+                }
+
                 bat '''
                     .jenkins-venv\\Scripts\\python.exe -m bandit -r api-service resource-service processing-service helper-package -ll
                 '''
             }
         }
+
         stage('Dependency Security Analysis') {
             steps {
                 bat '''
-                    .jenkins-venv\\Scripts\\python.exe -m pip_audit
+                    .jenkins-venv\\Scripts\\python.exe -m pip_audit -f json -o artifacts\\pip-audit-report.json
                 '''
             }
+        }
+    }
+
+    post {
+        always {
+            junit testResults: 'artifacts/*-tests.xml', allowEmptyResults: true
+
+            archiveArtifacts artifacts: 'artifacts/**/*',
+                             allowEmptyArchive: true
         }
     }
 }
