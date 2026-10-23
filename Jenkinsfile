@@ -8,9 +8,31 @@ pipeline {
     stages {
         stage('Validate Environment') {
             steps {
-                bat 'where python'
                 bat 'python --version'
                 bat 'python -m pip --version'
+            }
+        }
+
+        stage('Create Test Environment') {
+            steps {
+                bat '''
+                    if exist .jenkins-venv rmdir /s /q .jenkins-venv
+                    python -m venv .jenkins-venv
+                    .jenkins-venv\\Scripts\\python.exe -m pip install --upgrade pip
+                    .jenkins-venv\\Scripts\\python.exe -m pip install -r requirements.txt
+                    .jenkins-venv\\Scripts\\python.exe -m pip install -e helper-package
+                '''
+            }
+        }
+
+        stage('Validate Build') {
+            steps {
+                bat '''
+                    .jenkins-venv\\Scripts\\python.exe -m compileall api-service
+                    .jenkins-venv\\Scripts\\python.exe -m compileall resource-service
+                    .jenkins-venv\\Scripts\\python.exe -m compileall processing-service
+                    .jenkins-venv\\Scripts\\python.exe -m compileall helper-package
+                '''
             }
         }
     }
