@@ -38,14 +38,15 @@ pipeline {
         stage('Unit and Authorization Tests') {
             steps {
                 bat '''
-                    .jenkins-venv\\Scripts\\python.exe -m pytest tests/test_api.py tests/test_resource.py -v
+                    .jenkins-venv\\Scripts\\python.exe -m pytest tests/test_api.py tests/test_resource.py -v --junitxml=artifacts/unit-tests.xml
                 '''
             }
         }
+
         stage('Integration Tests') {
             steps {
                 bat '''
-                    .jenkins-venv\\Scripts\\python.exe -m pytest tests/test_integration.py -v
+                    .jenkins-venv\\Scripts\\python.exe -m pytest tests/test_integration.py -v --junitxml=artifacts/integration-tests.xml
                 '''
             }
         }
