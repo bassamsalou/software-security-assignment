@@ -382,3 +382,5 @@ The project deliberately uses:
 - Command-line/API interaction
 
 Production concerns such as public hosting, registration, payment processing, email delivery, high availability, and large-scale deployment are outside the scope of the assignment.
+
+<!-- Jenkins SCM trigger verification -->
