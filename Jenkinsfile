@@ -56,5 +56,12 @@ pipeline {
                 '''
             }
         }
+        stage('Dependency Security Analysis') {
+            steps {
+                bat '''
+                    .jenkins-venv\\Scripts\\python.exe -m pip_audit
+                '''
+            }
+        }
     }
 }
