@@ -176,3 +176,27 @@ def test_cwe862_bookings_require_authorization():
 
     assert response.status_code == 401
     assert response.get_json()["error"] == "Authorization information required"
+
+
+def test_vulnerability_cwe89_sql_injection_bypasses_owner_filter():
+    client = resource_app.app.test_client()
+
+    response = client.get(
+        "/bookings/search",
+        query_string={
+            "destination": "' OR 1=1 --"
+        },
+        headers={
+            "X-Username": "john",
+            "X-Role": "user"
+        }
+    )
+
+    assert response.status_code == 200
+
+    bookings = response.get_json()
+
+    owners = {booking["owner"] for booking in bookings}
+
+    assert "john" in owners
+    assert "doe" in owners

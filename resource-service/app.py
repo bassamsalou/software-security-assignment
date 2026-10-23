@@ -46,6 +46,53 @@ def get_bookings():
     return jsonify([dict(booking) for booking in bookings])
 
 
+@app.get("/bookings/search")
+def search_bookings():
+    username = request.headers.get("X-Username")
+    role = request.headers.get("X-Role")
+
+    if not username or not role:
+        return jsonify({
+            "error": "Authorization information required"
+        }), 401
+
+    destination = request.args.get("destination")
+
+    if not destination:
+        return jsonify({
+            "error": "Destination is required"
+        }), 400
+
+    connection = get_connection()
+
+    # INTENTIONALLY VULNERABLE FOR CWE-89 INVESTIGATION.
+    if role == "admin":
+        query = (
+            f"SELECT * FROM bookings "
+            f"WHERE destination = '{destination}'"
+        )
+
+    elif role == "user":
+        query = (
+            f"SELECT * FROM bookings "
+            f"WHERE owner = '{username}' "
+            f"AND destination = '{destination}'"
+        )
+
+    else:
+        connection.close()
+
+        return jsonify({
+            "error": "Access denied"
+        }), 403
+
+    bookings = connection.execute(query).fetchall()
+
+    connection.close()
+
+    return jsonify([dict(booking) for booking in bookings])
+
+
 @app.get("/bookings/<int:booking_id>")
 def get_booking(booking_id):
     username = request.headers.get("X-Username")
