@@ -35,5 +35,12 @@ pipeline {
                 '''
             }
         }
+        stage('Unit and Authorization Tests') {
+            steps {
+                bat '''
+                    .jenkins-venv\\Scripts\\python.exe -m pytest tests/test_api.py tests/test_resource.py -v
+                '''
+            }
+        }
     }
 }
